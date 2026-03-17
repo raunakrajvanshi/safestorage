@@ -1,95 +1,19 @@
 {
-  "name": "safestorage",
-  "version": "1.0.0",
-  "description": "Encrypted localStorage/sessionStorage with React, Vue, and Angular adapters",
-  "keywords": [
-    "localstorage",
-    "encryption",
-    "aes",
-    "secure storage",
-    "react hooks",
-    "vue composable",
-    "angular service",
-    "web crypto"
-  ],
-  "author": "",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/your-org/safestorage.git"
-  },
-  "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./react": {
-      "types": "./dist/react/index.d.ts",
-      "import": "./dist/react/index.js",
-      "require": "./dist/react/index.cjs"
-    },
-    "./vue": {
-      "types": "./dist/vue/index.d.ts",
-      "import": "./dist/vue/index.js",
-      "require": "./dist/vue/index.cjs"
-    },
-    "./angular": {
-      "types": "./dist/angular/index.d.ts",
-      "import": "./dist/angular/index.js",
-      "require": "./dist/angular/index.cjs"
-    }
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
+  "name": "safestorage-workspace",
+  "private": true,
+  "workspaces": [
+    "packages/*"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "lint": "eslint src tests --ext .ts,.tsx",
-    "format": "prettier --write src tests",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
-  },
-  "peerDependencies": {
-    "@angular/core": ">=14.0.0",
-    "react": ">=17.0.0",
-    "vue": ">=3.0.0"
-  },
-  "peerDependenciesOptional": {
-    "@angular/core": true,
-    "react": true,
-    "vue": true
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write \"packages/*/src/**/*.{ts,tsx}\" \"packages/*/tests/**/*.{ts,tsx}\"",
+    "clean": "rm -rf packages/*/dist packages/*/node_modules node_modules"
   },
   "devDependencies": {
-    "@angular/core": "^17.0.0",
-    "@eslint/js": "^9.0.0",
-    "@testing-library/react": "^14.0.0",
-    "@testing-library/user-event": "^14.0.0",
-    "@types/react": "^18.0.0",
-    "@vitejs/plugin-react": "^4.0.0",
-    "@vitest/coverage-v8": "^1.0.0",
-    "eslint": "^9.0.0",
-    "happy-dom": "^12.0.0",
-    "jsdom": "^24.0.0",
     "prettier": "^3.0.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "tsup": "^8.0.0",
-    "typescript": "^5.3.0",
-    "typescript-eslint": "^7.0.0",
-    "vitest": "^1.0.0",
-    "vue": "^3.4.0",
-    "rxjs": "^7.8.0",
-    "zone.js": "^0.14.0"
+    "typescript": "^5.3.0"
   }
 }
