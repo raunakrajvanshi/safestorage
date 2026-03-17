@@ -24,24 +24,24 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     },
     "./react": {
+      "types": "./dist/react/index.d.ts",
       "import": "./dist/react/index.js",
-      "require": "./dist/react/index.cjs",
-      "types": "./dist/react/index.d.ts"
+      "require": "./dist/react/index.cjs"
     },
     "./vue": {
+      "types": "./dist/vue/index.d.ts",
       "import": "./dist/vue/index.js",
-      "require": "./dist/vue/index.cjs",
-      "types": "./dist/vue/index.d.ts"
+      "require": "./dist/vue/index.cjs"
     },
     "./angular": {
+      "types": "./dist/angular/index.d.ts",
       "import": "./dist/angular/index.js",
-      "require": "./dist/angular/index.cjs",
-      "types": "./dist/angular/index.d.ts"
+      "require": "./dist/angular/index.cjs"
     }
   },
   "files": [

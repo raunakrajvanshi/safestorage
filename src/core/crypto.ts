@@ -47,16 +47,16 @@ function toBase64(buffer: ArrayBuffer): string {
   return btoa(String.fromCharCode(...new Uint8Array(buffer)));
 }
 
-function fromBase64(str: string): Uint8Array {
+function fromBase64(str: string): Uint8Array<ArrayBuffer> {
   return new Uint8Array(
     atob(str)
       .split('')
       .map((c) => c.charCodeAt(0)),
-  );
+  ) as Uint8Array<ArrayBuffer>;
 }
 
-function randomBytes(length: number): Uint8Array {
-  const bytes = new Uint8Array(length);
+function randomBytes(length: number): Uint8Array<ArrayBuffer> {
+  const bytes = new Uint8Array(length) as Uint8Array<ArrayBuffer>;
   globalThis.crypto.getRandomValues(bytes);
   return bytes;
 }
@@ -71,8 +71,8 @@ function randomBytes(length: number): Uint8Array {
  */
 export async function deriveKey(
   password: string,
-  existingSalt?: Uint8Array,
-): Promise<{ key: CryptoKey; salt: Uint8Array }> {
+  existingSalt?: Uint8Array<ArrayBuffer>,
+): Promise<{ key: CryptoKey; salt: Uint8Array<ArrayBuffer> }> {
   const subtle = getCrypto();
   const salt = existingSalt ?? randomBytes(16);
 
@@ -120,9 +120,9 @@ export async function encrypt(plaintext: string, password: string): Promise<Encr
   );
 
   return {
-    iv: toBase64(iv.buffer),
+    iv: toBase64(iv.buffer as ArrayBuffer),
     ct: toBase64(ciphertext),
-    salt: toBase64(salt.buffer),
+    salt: toBase64(salt.buffer as ArrayBuffer),
   };
 }
 

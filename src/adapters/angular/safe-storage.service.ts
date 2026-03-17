@@ -26,7 +26,7 @@
 
 import { Injectable, InjectionToken, inject, signal, type Signal } from '@angular/core';
 import { SafeStorage } from '../../core/storage.js';
-import type { SafeStorageConfig, SetOptions, ISafeStorage } from '../../core/types.js';
+import type { SafeStorageConfig, SetOptions, ISafeStorage, StorageChangeListener } from '../../core/types.js';
 
 // ─── Config token ─────────────────────────────────────────────────────────────
 
@@ -91,12 +91,8 @@ export class SafeStorageService implements ISafeStorage {
    *   // in ngOnDestroy:
    *   off();
    */
-  onChange<T = unknown>(
-    listener: Parameters<SafeStorage['onChange']>[0] extends (e: infer E) => void
-      ? (event: E) => void
-      : never,
-  ): () => void {
-    return this.storage.onChange<T>(listener as Parameters<SafeStorage['onChange']>[0]);
+  onChange<T = unknown>(listener: StorageChangeListener<T>): () => void {
+    return this.storage.onChange<T>(listener);
   }
 
   // ─── Signal-based API (Angular 16+) ─────────────────────────────────────────

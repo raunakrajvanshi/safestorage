@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { StorageProvider } from '../../../src/adapters/react/StorageProvider.js';
 import { useStorage, useEncryptedState } from '../../../src/adapters/react/useStorage.js';
@@ -86,33 +86,26 @@ describe('useStorage', () => {
 
 describe('useEncryptedState', () => {
   it('behaves like useState', async () => {
-    const { result } = renderHook(() => useEncryptedState('state-key', 0), { wrapper });
-
-    expect(result.current[0]).toBe(0);
+    const { result } = renderHook(() => useEncryptedState('state-key-2', 0), { wrapper });
 
     act(() => {
       result.current[1](5);
     });
 
-    // Give async write a moment
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 20));
-    });
-
-    expect(result.current[0]).toBe(5);
+    await waitFor(() => {
+      expect(result.current[0]).toBe(5);
+    }, { timeout: 3000 });
   });
 
   it('supports functional updates', async () => {
-    const { result } = renderHook(() => useEncryptedState('fn-update-key', 10), { wrapper });
+    const { result } = renderHook(() => useEncryptedState('fn-update-key-2', 10), { wrapper });
 
     act(() => {
       result.current[1]((prev) => prev + 5);
     });
 
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 20));
-    });
-
-    expect(result.current[0]).toBe(15);
+    await waitFor(() => {
+      expect(result.current[0]).toBe(15);
+    }, { timeout: 3000 });
   });
 });

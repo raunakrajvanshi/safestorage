@@ -71,14 +71,20 @@ export function useStorage<T>(
 
   const [value, setInternalValue] = useState<T>(defaultValue);
   const [initialized, setInitialized] = useState(false);
+  // Track whether setValue was called before the initial load completes.
+  // If it was, we skip overwriting the optimistic update with stale storage data.
+  const setCalledBeforeInit = useRef(false);
 
   // Load the initial value from storage
   useEffect(() => {
     let cancelled = false;
+    setCalledBeforeInit.current = false;
 
     storage.get<T>(key, defaultValue).then((stored) => {
       if (!cancelled) {
-        setInternalValue(stored as T);
+        if (!setCalledBeforeInit.current) {
+          setInternalValue(stored as T);
+        }
         setInitialized(true);
       }
     });
@@ -126,6 +132,7 @@ export function useStorage<T>(
           ? (valueOrUpdater as (prev: T) => T)(value)
           : valueOrUpdater;
 
+      setCalledBeforeInit.current = true;
       setInternalValue(nextValue);
       await storage.set(key, nextValue, writeOptions);
     },
