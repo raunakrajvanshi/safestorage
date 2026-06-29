@@ -1,4 +1,4 @@
-export { SafeStorageService, SAFE_STORAGE_CONFIG } from './safe-storage.service.js';
+export { SafeStorageService } from './safe-storage.service.js';
 export { SafeStorageModule, provideSafeStorage } from './safe-storage.module.js';
 
 export type {

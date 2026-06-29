@@ -2,42 +2,33 @@
  * SafeStorageModule — NgModule-based setup for apps that haven't migrated
  * to standalone components yet.
  *
- * @example
+ * NOTE: Because @safestorage/angular is built without the Angular compiler (ngc),
+ * the @NgModule decorator is intentionally omitted. The module is provided as a
+ * plain class with static factory methods that return provider arrays, which
+ * work correctly with Angular's Ivy AOT.
+ *
+ * @example — NgModule app (app.module.ts)
  *   @NgModule({
- *     imports: [
- *       SafeStorageModule.forRoot({
- *         password: environment.storageKey,
- *         namespace: 'app::',
- *       }),
- *     ],
+ *     providers: SafeStorageModule.forRoot({ password: environment.storageKey }),
  *   })
  *   export class AppModule {}
  */
 
-import { NgModule, ModuleWithProviders } from '@angular/core';
-import { SAFE_STORAGE_CONFIG, SafeStorageService } from './safe-storage.service.js';
+import type { Provider } from '@angular/core';
+import { SafeStorageService } from './safe-storage.service.js';
 import type { SafeStorageConfig } from '@safestorage/core';
 
-@NgModule({})
 export class SafeStorageModule {
-  static forRoot(config: SafeStorageConfig): ModuleWithProviders<SafeStorageModule> {
-    return {
-      ngModule: SafeStorageModule,
-      providers: [
-        { provide: SAFE_STORAGE_CONFIG, useValue: config },
-        SafeStorageService,
-      ],
-    };
+  static forRoot(config: SafeStorageConfig): Provider[] {
+    return [
+      { provide: SafeStorageService, useFactory: () => new SafeStorageService(config) },
+    ];
   }
 
-  static forChild(config: SafeStorageConfig): ModuleWithProviders<SafeStorageModule> {
-    return {
-      ngModule: SafeStorageModule,
-      providers: [
-        { provide: SAFE_STORAGE_CONFIG, useValue: config },
-        SafeStorageService,
-      ],
-    };
+  static forChild(config: SafeStorageConfig): Provider[] {
+    return [
+      { provide: SafeStorageService, useFactory: () => new SafeStorageService(config) },
+    ];
   }
 }
 
@@ -49,9 +40,8 @@ export class SafeStorageModule {
  *     providers: [provideSafeStorage({ password: environment.storageKey })],
  *   };
  */
-export function provideSafeStorage(config: SafeStorageConfig) {
+export function provideSafeStorage(config: SafeStorageConfig): Provider[] {
   return [
-    { provide: SAFE_STORAGE_CONFIG, useValue: config },
-    SafeStorageService,
+    { provide: SafeStorageService, useFactory: () => new SafeStorageService(config) },
   ];
 }

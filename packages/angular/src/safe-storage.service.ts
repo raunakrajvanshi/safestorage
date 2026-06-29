@@ -1,8 +1,11 @@
 /**
- * SafeStorageService — Angular injectable for encrypted storage.
+ * SafeStorageService — Angular service for encrypted storage.
  *
- * @example — standalone / root-provided
- *   // app.config.ts
+ * Built as a plain class (no @Injectable decorator) so it works with Ivy AOT
+ * without requiring ngc compilation. Register it via provideSafeStorage() or
+ * SafeStorageModule.forRoot() — both use useFactory under the hood.
+ *
+ * @example — standalone app (app.config.ts)
  *   import { provideSafeStorage } from '@safestorage/angular';
  *
  *   export const appConfig: ApplicationConfig = {
@@ -12,25 +15,17 @@
  *   };
  *
  *   // some.component.ts
- *   constructor(private storage: SafeStorageService) {}
- *
- *   async saveUser(user: User) {
- *     await this.storage.set('user', user);
- *   }
+ *   private readonly storage = inject(SafeStorageService);
  */
 
-import { Injectable, InjectionToken, inject, signal, type Signal } from '@angular/core';
+import { signal, type Signal } from '@angular/core';
 import { SafeStorage } from '@safestorage/core';
 import type { SafeStorageConfig, SetOptions, ISafeStorage, StorageChangeListener } from '@safestorage/core';
 
-export const SAFE_STORAGE_CONFIG = new InjectionToken<SafeStorageConfig>('SAFE_STORAGE_CONFIG');
-
-@Injectable()
 export class SafeStorageService implements ISafeStorage {
   private readonly storage: SafeStorage;
 
-  constructor() {
-    const config = inject(SAFE_STORAGE_CONFIG);
+  constructor(config: SafeStorageConfig) {
     this.storage = new SafeStorage(config);
   }
 
