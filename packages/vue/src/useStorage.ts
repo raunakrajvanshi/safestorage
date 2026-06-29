@@ -39,7 +39,13 @@ export function useStorage<T>(
   const internalValue = ref<T>(defaultValue) as Ref<T>;
   const ready = ref(false);
 
+  // Guard against writing to a ref after the component has unmounted.
+  // Without this, an in-flight storage.get() would update a dead ref if the
+  // component is destroyed before the PBKDF2 derivation completes.
+  let cancelled = false;
+
   storage.get<T>(key, defaultValue).then((stored) => {
+    if (cancelled) return;
     internalValue.value = stored as T;
     ready.value = true;
   });
@@ -47,7 +53,7 @@ export function useStorage<T>(
   function handleStorageEvent(event: StorageEvent) {
     if (event.storageArea !== localStorage && event.storageArea !== sessionStorage) return;
     storage.get<T>(key, defaultValue).then((stored) => {
-      internalValue.value = stored as T;
+      if (!cancelled) internalValue.value = stored as T;
     });
   }
 
@@ -65,6 +71,7 @@ export function useStorage<T>(
   });
 
   onUnmounted(() => {
+    cancelled = true;
     offChange();
     if (typeof window !== 'undefined') {
       window.removeEventListener('storage', handleStorageEvent);
