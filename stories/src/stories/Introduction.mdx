@@ -1,0 +1,105 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="SafeStorage/Introduction" />
+
+# SafeStorage
+
+**Encrypted localStorage/sessionStorage for the browser — framework-agnostic core with first-class React, Vue 3, and Angular adapters.**
+
+Every value is encrypted with AES-256-GCM before it touches storage. Keys are derived via PBKDF2 so the same password + different salts never produce the same ciphertext. Open DevTools → Application → Local Storage and you'll see opaque base64 blobs — not readable JSON.
+
+---
+
+## Packages
+
+| Package | Install | What you get |
+|---|---|---|
+| `@safestorage/core` | `npm i @safestorage/core` | Framework-agnostic `SafeStorage` class |
+| `@safestorage/react` | `npm i @safestorage/react` | `useStorage`, `useEncryptedState`, `StorageProvider` |
+| `@safestorage/vue` | `npm i @safestorage/vue` | `useStorage` composable |
+| `@safestorage/angular` | `npm i @safestorage/angular` | `SafeStorageService`, `provideSafeStorage` |
+
+---
+
+## Quick start — Core
+
+```ts
+import { SafeStorage } from '@safestorage/core';
+
+const storage = new SafeStorage({
+  password: import.meta.env.VITE_STORAGE_KEY,
+  namespace: 'myapp::',
+});
+
+await storage.set('user', { id: 1, name: 'Alice' });
+const user = await storage.get('user');   // { id: 1, name: 'Alice' }
+await storage.remove('user');
+```
+
+## Quick start — React
+
+```tsx
+// main.tsx — configure once at the root
+<StorageProvider password={import.meta.env.VITE_KEY} namespace="app::">
+  <App />
+</StorageProvider>
+
+// AnyComponent.tsx — use anywhere in the tree
+const [user, setUser, removeUser] = useStorage<User>('user', null);
+
+// Drop-in useState replacement that persists automatically
+const [count, setCount] = useEncryptedState('counter', 0);
+```
+
+## Quick start — Vue 3
+
+```ts
+const { value: theme, set: setTheme, remove, ready } = useStorage('theme', 'light', {
+  password: import.meta.env.VITE_KEY,
+  namespace: 'prefs::',
+});
+```
+
+## Quick start — Angular
+
+```ts
+// app.config.ts
+providers: [provideSafeStorage({ password: env.storageKey, namespace: 'app::' })]
+
+// component.ts
+private readonly storage = inject(SafeStorageService);
+readonly theme = this.storage.toSignal('theme', 'light');   // Angular signal
+await this.storage.set('user', user);
+```
+
+---
+
+## Security model
+
+- **Algorithm**: AES-256-GCM (authenticated encryption — detects tampering)
+- **Key derivation**: PBKDF2-SHA256, 100 000 iterations, per-item random salt
+- **IV**: 96-bit random nonce, unique per `set()` call
+- **Wire format**: `{ iv, ct, salt }` — all base64, no plaintext leaks
+
+> The password is the weakest link. Pull it from an environment variable, rotate it on sign-out, and never hardcode it.
+
+---
+
+## Browse the stories
+
+| Story | What it shows |
+|---|---|
+| **Core / Basic Usage** | set · get · remove · has |
+| **Core / Encrypted Output** | Raw ciphertext side-by-side with the decrypted value |
+| **Core / TTL & Expiry** | Items that auto-expire after N ms (Storybook control to adjust) |
+| **Core / Namespace Scoping** | Multiple instances, zero key collisions |
+| **Core / Change Events** | `onChange()` firing in real time |
+| **Vue / Counter** | Reactive ref that survives page refreshes |
+| **Vue / User Profile** | Structured object — set · remove · `ready` flag |
+| **Vue / Theme Toggle** | String enum preference with live preview |
+| **Vue / Session Storage** | `storage: 'session'` — wiped on tab close |
+| **React / StorageProvider + useStorage** | Configure once at root, use anywhere |
+| **React / useEncryptedState** | Drop-in for `useState` — auto-persists |
+| **React / Standalone useStorage** | No provider needed — pass password directly |
+| **React / Reactive Updates** | Re-renders on every write, cross-tab propagation |
+| **Angular** | Full MDX docs — setup, Promise API, Signal API, TTL, onChange |

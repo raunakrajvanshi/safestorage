@@ -1,0 +1,228 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="SafeStorage/Angular" />
+
+# SafeStorage — Angular
+
+`@safestorage/angular` ships a plain TypeScript class (`SafeStorageService`) that Angular's DI resolves via `useFactory`. It works with Angular 14+ standalone apps and NgModule-based apps.
+
+---
+
+## Setup — standalone (Angular 14+)
+
+```ts
+// app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideSafeStorage } from '@safestorage/angular';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideSafeStorage({
+      password: environment.storageKey,   // pull from env — never hardcode
+      namespace: 'myapp::',
+    }),
+  ],
+};
+```
+
+```ts
+// main.ts
+import { bootstrapApplication } from '@angular/platform-browser';
+import { AppComponent } from './app/app.component';
+import { appConfig } from './app/app.config';
+
+bootstrapApplication(AppComponent, appConfig).catch(console.error);
+```
+
+---
+
+## Setup — NgModule
+
+```ts
+// app.module.ts
+import { NgModule } from '@angular/core';
+import { SafeStorageModule } from '@safestorage/angular';
+
+@NgModule({
+  providers: [
+    ...SafeStorageModule.forRoot({
+      password: environment.storageKey,
+      namespace: 'myapp::',
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+---
+
+## Promise API — set · get · remove
+
+```ts
+import { Component, inject } from '@angular/core';
+import { SafeStorageService } from '@safestorage/angular';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+
+interface User { id: number; name: string; role: string }
+
+@Component({
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <div *ngIf="user; else form">
+      <p>{{ user.name }} ({{ user.role }})</p>
+      <button (click)="clearUser()">Sign out</button>
+    </div>
+    <ng-template #form>
+      <input [(ngModel)]="nameInput" placeholder="Name" />
+      <button (click)="saveUser()">Save</button>
+    </ng-template>
+  `,
+})
+export class ProfileComponent {
+  private readonly storage = inject(SafeStorageService);
+
+  user: User | null = null;
+  nameInput = '';
+
+  async ngOnInit() {
+    this.user = (await this.storage.get<User>('user')) ?? null;
+  }
+
+  async saveUser() {
+    const u: User = { id: 1, name: this.nameInput, role: 'admin' };
+    await this.storage.set('user', u);
+    this.user = u;
+    this.nameInput = '';
+  }
+
+  async clearUser() {
+    await this.storage.remove('user');
+    this.user = null;
+  }
+}
+```
+
+---
+
+## Signal API — toSignal · setSignal
+
+Angular 16+ signals are fully supported. `toSignal()` returns a read-only Angular signal that stays in sync with encrypted storage.
+
+```ts
+@Component({
+  standalone: true,
+  template: `
+    <div class="pill-row">
+      <button
+        *ngFor="let t of themes"
+        [class.active]="theme() === t"
+        (click)="setTheme(t)"
+      >{{ t }}</button>
+    </div>
+  `,
+})
+export class ThemeToggleComponent {
+  private readonly storage = inject(SafeStorageService);
+
+  readonly themes = ['light', 'dark', 'system'];
+
+  // Returns a read-only Angular signal — no .subscribe(), no async pipe
+  readonly theme = this.storage.toSignal<string>('theme', 'system');
+
+  async setTheme(t: string) {
+    await this.storage.setSignal('theme', t);
+    // Signal updates automatically via onChange() listener
+  }
+}
+```
+
+---
+
+## TTL — items that expire
+
+```ts
+// Store a session token that expires in 1 hour
+await this.storage.set('session_token', token, { ttl: 60 * 60 * 1000 });
+
+// Store an OTP that expires in 5 minutes
+await this.storage.set('otp', code, { ttl: 5 * 60 * 1000 });
+
+// Global TTL on the provider (applies to every set unless overridden)
+provideSafeStorage({ password: env.key, ttl: 30 * 60 * 1000 })
+```
+
+---
+
+## sessionStorage backend
+
+```ts
+// app.config.ts — use sessionStorage (wiped on tab close)
+provideSafeStorage({
+  password: environment.storageKey,
+  storage: 'session',   // 'local' | 'session'
+})
+```
+
+---
+
+## Full service API reference
+
+```ts
+class SafeStorageService {
+  // Promise-based CRUD
+  set<T>(key: string, value: T, options?: { ttl?: number }): Promise<void>
+  get<T>(key: string, fallback?: T): Promise<T | undefined>
+  remove(key: string): Promise<void>
+  clear(): Promise<void>   // ⚠ clears entire namespace
+
+  // Synchronous inspection
+  keys(): string[]          // all keys in this namespace
+  has(key: string): boolean // true even for expired entries
+
+  // Change subscription
+  onChange<T>(listener: (event: StorageChangeEvent<T>) => void): () => void
+
+  // Angular signals (16+)
+  toSignal<T>(key: string, defaultValue: T): Signal<T>    // read-only
+  setSignal<T>(key: string, value: T, options?: SetOptions): Promise<void>
+}
+```
+
+---
+
+## onChange — reactive updates
+
+```ts
+export class NotificationsComponent implements OnInit, OnDestroy {
+  private readonly storage = inject(SafeStorageService);
+  private unsubscribe?: () => void;
+
+  ngOnInit() {
+    this.unsubscribe = this.storage.onChange<string[]>((event) => {
+      if (event.key === 'notifications' && event.type === 'set') {
+        this.notifications = event.newValue ?? [];
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.unsubscribe?.();  // always clean up to avoid memory leaks
+  }
+}
+```
+
+> **Note**: `toSignal()` registers its own `onChange` listener internally. Call it only once per key (e.g. in a singleton service), and store the result in a field rather than calling it per-component.
+
+---
+
+## Security considerations
+
+| Concern | What SafeStorage does |
+|---|---|
+| Algorithm | AES-256-GCM — authenticated encryption, detects tampering |
+| Key derivation | PBKDF2-SHA256, 100 000 iterations, random 128-bit salt per entry |
+| IV | 96-bit random nonce, unique per `set()` call — never reused |
+| Wire format | `{ iv, ct, salt }` — all base64, no plaintext ever written |
+| Password storage | You provide the passphrase — store it in `environment.ts`, rotate on sign-out |

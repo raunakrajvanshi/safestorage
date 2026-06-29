@@ -5,7 +5,11 @@
     "packages/*"
   ],
   "scripts": {
+    "storybook": "npm run dev --prefix stories",
     "build": "npm run build --workspaces --if-present",
+    "examples:react": "npm run dev --prefix examples/react-demo",
+    "examples:vue": "npm run dev --prefix examples/vue-demo",
+    "examples:angular": "npm run start --prefix examples/angular-demo",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
