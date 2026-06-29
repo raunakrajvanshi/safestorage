@@ -6,7 +6,7 @@
   ],
   "scripts": {
     "storybook": "npm run dev --prefix stories",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build --workspace=packages/core && npm run build --workspace=packages/react --workspace=packages/vue --workspace=packages/angular",
     "examples:react": "npm run dev --prefix examples/react-demo",
     "examples:vue": "npm run dev --prefix examples/vue-demo",
     "examples:angular": "npm run start --prefix examples/angular-demo",

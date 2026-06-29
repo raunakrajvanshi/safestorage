@@ -18,15 +18,23 @@
  *   private readonly storage = inject(SafeStorageService);
  */
 
-import { signal, type Signal } from '@angular/core';
+import { signal, type Signal, type OnDestroy } from '@angular/core';
 import { SafeStorage } from '@safestorage/core';
 import type { SafeStorageConfig, SetOptions, ISafeStorage, StorageChangeListener } from '@safestorage/core';
 
-export class SafeStorageService implements ISafeStorage {
+export class SafeStorageService implements ISafeStorage, OnDestroy {
   private readonly storage: SafeStorage;
+  // Collect every onChange unsubscriber registered by toSignal() so they can
+  // all be cleaned up when the injector that owns this service is destroyed.
+  private readonly signalListeners: Array<() => void> = [];
 
   constructor(config: SafeStorageConfig) {
     this.storage = new SafeStorage(config);
+  }
+
+  ngOnDestroy(): void {
+    for (const off of this.signalListeners) off();
+    this.signalListeners.length = 0;
   }
 
   set<T>(key: string, value: T, options?: SetOptions): Promise<void> {
@@ -73,7 +81,7 @@ export class SafeStorageService implements ISafeStorage {
       sig.set(value as T);
     });
 
-    this.storage.onChange<T>((event) => {
+    const off = this.storage.onChange<T>((event) => {
       if (event.key !== key) return;
       if (event.type === 'set') {
         sig.set(event.newValue as T);
@@ -81,6 +89,9 @@ export class SafeStorageService implements ISafeStorage {
         sig.set(defaultValue);
       }
     });
+
+    // Track the unsubscriber so ngOnDestroy can clean up all signal listeners.
+    this.signalListeners.push(off);
 
     return sig.asReadonly();
   }

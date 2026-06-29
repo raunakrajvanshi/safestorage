@@ -57,3 +57,13 @@ export function useStorageContext(): SafeStorage {
 
   return ctx.storage;
 }
+
+/**
+ * Like `useStorageContext` but returns `null` instead of throwing when no
+ * provider is present. Used internally by `useStorage` to support both the
+ * provider and standalone patterns without violating Rules of Hooks.
+ */
+export function useStorageContextMaybe(): SafeStorage | null {
+  const ctx = useContext(StorageContext);
+  return ctx?.storage ?? null;
+}
