@@ -44,19 +44,30 @@ function getCrypto(): SubtleCrypto {
 }
 
 function toBase64(buffer: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]!);
+  }
+  return btoa(binary);
 }
 
-function fromBase64(str: string): Uint8Array<ArrayBuffer> {
-  return new Uint8Array(
-    atob(str)
-      .split('')
-      .map((c) => c.charCodeAt(0)),
-  ) as Uint8Array<ArrayBuffer>;
+function fromBase64(str: string): Uint8Array {
+  const decoded = atob(str);
+  // Construct via an explicit ArrayBuffer so the backing .buffer is typed as
+  // ArrayBuffer (not ArrayBufferLike), satisfying the Web Crypto BufferSource types.
+  const buf = new ArrayBuffer(decoded.length);
+  const bytes = new Uint8Array(buf);
+  for (let i = 0; i < decoded.length; i++) {
+    bytes[i] = decoded.charCodeAt(i);
+  }
+  return bytes;
 }
 
-function randomBytes(length: number): Uint8Array<ArrayBuffer> {
-  const bytes = new Uint8Array(length) as Uint8Array<ArrayBuffer>;
+function randomBytes(length: number): Uint8Array {
+  // Explicit ArrayBuffer construction — same reason as fromBase64 above.
+  const buf = new ArrayBuffer(length);
+  const bytes = new Uint8Array(buf);
   globalThis.crypto.getRandomValues(bytes);
   return bytes;
 }
@@ -71,10 +82,10 @@ function randomBytes(length: number): Uint8Array<ArrayBuffer> {
  */
 export async function deriveKey(
   password: string,
-  existingSalt?: Uint8Array<ArrayBuffer>,
-): Promise<{ key: CryptoKey; salt: Uint8Array<ArrayBuffer> }> {
+  existingSalt?: Uint8Array,
+): Promise<{ key: CryptoKey; salt: Uint8Array }> {
   const subtle = getCrypto();
-  const salt = existingSalt ?? randomBytes(16);
+  const salt = existingSalt ?? randomBytes(32);
 
   const passwordKey = await subtle.importKey(
     'raw',
