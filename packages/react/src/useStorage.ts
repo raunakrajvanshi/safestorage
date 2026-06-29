@@ -19,13 +19,14 @@ import {
   useState,
   useEffect,
   useCallback,
+  useMemo,
   useRef,
   type Dispatch,
   type SetStateAction,
 } from 'react';
 import { SafeStorage } from '@safestorage/core';
 import type { SafeStorageConfig, SetOptions } from '@safestorage/core';
-import { useStorageContext } from './StorageProvider.js';
+import { useStorageContext, useStorageContextMaybe } from './StorageProvider.js';
 
 export type UseStorageOptions = SafeStorageConfig & SetOptions;
 
@@ -40,10 +41,13 @@ export function useStorage<T>(
   defaultValue: T,
   options?: UseStorageOptions,
 ): UseStorageReturn<T> {
-  const contextStorage = tryUseContext();
+  // Always call useContext at the top level — never inside try/catch or conditionally.
+  // useStorageContextMaybe returns null when no provider is in the tree.
+  const contextStorage = useStorageContextMaybe();
   const standaloneStorage = useRef<SafeStorage | null>(null);
 
-  const storage: SafeStorage = (() => {
+  // Derive the SafeStorage instance once; only re-create if the password changes.
+  const storage = useMemo<SafeStorage>(() => {
     if (contextStorage) return contextStorage;
 
     if (options?.password) {
@@ -57,7 +61,8 @@ export function useStorage<T>(
       'useStorage: no StorageProvider found and no `password` option passed. ' +
         'Either wrap your app in <StorageProvider> or pass `password` directly to useStorage.',
     );
-  })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contextStorage, options?.password]);
 
   const [value, setInternalValue] = useState<T>(defaultValue);
   const [initialized, setInitialized] = useState(false);
@@ -80,11 +85,16 @@ export function useStorage<T>(
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [key, storage]);
 
   useEffect(() => {
+    // Resolve the fully-qualified raw key so we only re-fetch when our specific
+    // key changes in another tab, not on every unrelated localStorage write.
+    const rawKey = storage.resolveKey(key);
+
     function handleStorageEvent(event: StorageEvent) {
       if (event.storageArea !== localStorage && event.storageArea !== sessionStorage) return;
+      if (event.key !== null && event.key !== rawKey) return;
       storage.get<T>(key, defaultValue).then((stored) => {
         setInternalValue(stored as T);
       });
@@ -93,7 +103,7 @@ export function useStorage<T>(
     window.addEventListener('storage', handleStorageEvent);
     return () => window.removeEventListener('storage', handleStorageEvent);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [key, storage]);
 
   useEffect(() => {
     return storage.onChange<T>((event) => {
@@ -105,7 +115,7 @@ export function useStorage<T>(
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [key, storage]);
 
   const setValue = useCallback(
     async (valueOrUpdater: T | ((prev: T) => T), writeOptions?: SetOptions) => {
@@ -119,14 +129,14 @@ export function useStorage<T>(
       await storage.set(key, nextValue, writeOptions);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [key, value],
+    [key, value, storage],
   );
 
   const removeValue = useCallback(async () => {
     setInternalValue(defaultValue);
     await storage.remove(key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [key, storage]);
 
   return [initialized ? value : defaultValue, setValue, removeValue] as const as UseStorageReturn<T>;
 }
@@ -159,11 +169,3 @@ export function useEncryptedState<T>(
   return [value, dispatch];
 }
 
-function tryUseContext(): SafeStorage | null {
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useStorageContext();
-  } catch {
-    return null;
-  }
-}
