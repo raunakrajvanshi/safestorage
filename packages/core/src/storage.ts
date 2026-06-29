@@ -162,8 +162,10 @@ export class SafeStorage implements ISafeStorage {
   /**
    * Remove all keys that belong to this instance's namespace.
    *
-   * If no namespace is configured, this clears **all** keys in the storage
-   * backend — so think twice before calling it without one.
+   * ⚠ **Warning**: if no `namespace` is configured on this instance, this
+   * clears the **entire** localStorage / sessionStorage backend — including
+   * keys written by other libraries or unrelated code on the same origin.
+   * Always configure a namespace in production apps.
    */
   async clear(): Promise<void> {
     const keysToRemove = this.keys();
@@ -196,11 +198,31 @@ export class SafeStorage implements ISafeStorage {
   }
 
   /**
-   * Returns `true` if the key exists in storage, regardless of whether it's
-   * expired. Use `get()` and check for `undefined` if you care about TTL.
+   * Returns `true` if a raw entry for this key is present in storage.
+   *
+   * ⚠ **TTL caveat**: this check is synchronous and does NOT decrypt the entry,
+   * so it returns `true` even when the item has expired. The expiry is only
+   * enforced lazily on the next `get()` call. Do not use `has()` as a guard
+   * before `get()` and expect a non-undefined result — use `get()` directly
+   * and check for `undefined` instead.
    */
   has(key: string): boolean {
     return this.backend.getItem(this.prefixKey(key)) !== null;
+  }
+
+  /**
+   * Returns the fully-qualified storage key (namespace + key) as it appears
+   * in the raw localStorage / sessionStorage backend.
+   *
+   * Useful for filtering cross-tab `StorageEvent`s by the exact raw key:
+   *
+   * @example
+   *   window.addEventListener('storage', (e) => {
+   *     if (e.key === storage.resolveKey('theme')) { ... }
+   *   });
+   */
+  resolveKey(key: string): string {
+    return this.prefixKey(key);
   }
 
   // ─── Events ─────────────────────────────────────────────────────────────────
