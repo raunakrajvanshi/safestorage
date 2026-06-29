@@ -72,5 +72,9 @@ export function isExpired(raw: string): boolean {
 }
 
 function isStoredEntry<T>(value: unknown): value is StoredEntry<T> {
-  return typeof value === 'object' && value !== null && 'v' in value;
+  if (typeof value !== 'object' || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  // 'v' must exist and not be undefined — undefined cannot be JSON-serialized,
+  // so { v: undefined } is structurally invalid and should not pass as a stored entry.
+  return Object.prototype.hasOwnProperty.call(obj, 'v') && obj['v'] !== undefined;
 }
