@@ -1,0 +1,41 @@
+.root { min-height: 100vh; background: #0f172a; color: #e2e8f0; padding: 2rem; }
+.header { max-width: 760px; margin: 0 auto 2.5rem; text-align: center; }
+.title { font-size: 2rem; font-weight: 700; color: #f472b6; margin-bottom: 0.75rem; }
+.subtitle { color: #94a3b8; line-height: 1.6; }
+.main { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+.section { background: #1e293b; border-radius: 12px; padding: 1.5rem; border: 1px solid #334155; }
+.section-title { font-size: 1.1rem; font-weight: 600; color: #f9a8d4; margin-bottom: 0.4rem; }
+.hint { color: #64748b; font-size: 0.875rem; margin-bottom: 1rem; }
+
+.card { display: flex; flex-direction: column; gap: 0.5rem; }
+.row { display: flex; gap: 1rem; align-items: center; }
+.label { color: #64748b; width: 60px; flex-shrink: 0; }
+
+.form { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.input {
+  background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+  padding: 0.5rem 0.75rem; color: #e2e8f0; flex: 1; min-width: 140px; outline: none;
+  font-size: 1rem;
+}
+
+.btn {
+  background: #be185d; color: #fff; border: none; border-radius: 8px;
+  padding: 0.5rem 1.25rem; cursor: pointer; font-weight: 500; font-size: 1rem;
+}
+.btn.icon { width: 40px; height: 40px; font-size: 1.25rem; font-weight: 700; padding: 0; }
+.btn.danger { background: #dc2626; margin-top: 0.5rem; align-self: flex-start; }
+.btn-ghost {
+  background: transparent; color: #64748b; border: 1px solid #334155;
+  border-radius: 8px; padding: 0.4rem 0.75rem; cursor: pointer; font-size: 1rem;
+}
+
+.counter-row { display: flex; align-items: center; gap: 1rem; }
+.count { font-size: 2rem; font-weight: 700; min-width: 60px; text-align: center; }
+
+.pill-row { display: flex; gap: 0.5rem; }
+.pill {
+  background: #0f172a; color: #94a3b8; border: 1px solid #334155;
+  border-radius: 20px; padding: 0.4rem 1.1rem; cursor: pointer; text-transform: capitalize;
+  font-size: 1rem;
+}
+.pill.active { background: #be185d; color: #fff; border-color: #be185d; }

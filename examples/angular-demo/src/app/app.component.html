@@ -1,0 +1,58 @@
+<div class="root">
+  <header class="header">
+    <h1 class="title">SafeStorage — Angular Demo</h1>
+    <p class="subtitle">
+      All values below are encrypted in localStorage. Open DevTools → Application → Local Storage to see the ciphertext.
+    </p>
+  </header>
+
+  <main class="main">
+
+    <!-- Profile: Promise-based API -->
+    <section class="section">
+      <h2 class="section-title">SafeStorageService — User Profile</h2>
+      <p class="hint">Persists a structured object using the Promise API. Refresh the page — values survive.</p>
+
+      <ng-container *ngIf="profile; else profileForm">
+        <div class="card">
+          <div class="row"><span class="label">Name</span> {{ profile.name }}</div>
+          <div class="row"><span class="label">Email</span> {{ profile.email }}</div>
+          <button class="btn danger" (click)="clearProfile()">Clear Profile</button>
+        </div>
+      </ng-container>
+      <ng-template #profileForm>
+        <div class="form">
+          <input class="input" placeholder="Name" [(ngModel)]="nameInput" />
+          <input class="input" placeholder="Email" [(ngModel)]="emailInput" />
+          <button class="btn" (click)="saveProfile()">Save Profile</button>
+        </div>
+      </ng-template>
+    </section>
+
+    <!-- Counter: Promise-based API -->
+    <section class="section">
+      <h2 class="section-title">SafeStorageService — Counter</h2>
+      <p class="hint">Simple numeric value persisted with encryption. Refresh to confirm.</p>
+      <div class="counter-row">
+        <button class="btn icon" (click)="decrement()">−</button>
+        <span class="count">{{ count }}</span>
+        <button class="btn icon" (click)="increment()">+</button>
+        <button class="btn-ghost" (click)="reset()">Reset</button>
+      </div>
+    </section>
+
+    <!-- Theme: Signal-based API -->
+    <section class="section">
+      <h2 class="section-title">toSignal — Theme Preference</h2>
+      <p class="hint">Angular signal backed by encrypted storage. Reactive — no manual subscription.</p>
+      <div class="pill-row">
+        <button
+          *ngFor="let t of themes"
+          [class]="'pill ' + (theme() === t ? 'active' : '')"
+          (click)="setTheme(t)"
+        >{{ t }}</button>
+      </div>
+    </section>
+
+  </main>
+</div>
